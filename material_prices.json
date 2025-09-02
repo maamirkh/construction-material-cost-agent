@@ -1,0 +1,175 @@
+{
+  "bricks": {
+    "price_per_brick": 40
+  },
+  "cement": {
+    "price_per_bag": 1350
+  },
+  "sand": {
+    "price_per_cft": 60
+  },
+  "bajri": { 
+    "price_per_cft": 60 
+  },
+  "crush": { 
+    "price_per_cft": 70 
+  },
+  "rohri": { 
+    "price_per_cft": 60 
+  },
+   "marble_steps": { 
+    "step_per_pcs": 2000 
+  },
+  "flooring_tiles": { 
+    "tiles_per_cmt": 2000 
+  },
+  "steel": {
+    "price_per_ton": 250000
+  },
+  "pipe_1_2_inch": {
+    "price_per_ft": 50
+  },
+  "socket_1_2": {
+    "price_per_unit": 20
+  },
+  "elbow_1_2": {
+    "price_per_unit": 20
+  },
+  "tee_1_2": {
+    "price_per_unit": 20
+  },
+  "brass_socket_1_2": {
+    "price_per_unit": 150
+  },
+  "pipe_1_25_inch": {
+    "price_per_ft": 70
+  },
+  "socket_1_25": {
+    "price_per_unit": 30
+  },
+  "elbow_1_25": {
+    "price_per_unit": 30
+  },
+  "tee_1_25": {
+    "price_per_unit": 30
+  },
+  "pipe_6_inch_sewer_pipe": {
+    "price_per_ft": 150
+  },
+  "socket_6_inch": {
+    "price_per_unit": 150
+  },
+  "elbow_6_inch": {
+    "price_per_unit": 150
+  },
+  "pipe_4_inch_sewer_pipe": {
+    "price_per_ft": 100
+  },
+  "socket_4_inch": {
+    "price_per_unit": 100
+  },
+  "elbow_4_inch": {
+    "price_per_unit": 100
+  },
+  "tee_4_inch": {
+    "price_per_unit": 100
+  },
+  "ytee_4_inch": {
+    "price_per_unit": 100
+  },
+  "ptrap_4_inch": {
+    "price_per_unit": 100
+  },
+  "bathroom_set": {
+    "price_per_unit": 20000
+  },
+  "wash_basin": {
+    "price_per_unit": 5000
+  },
+  "commode": {
+    "price_per_unit": 15000
+  },
+  "kitchen_sink": {
+    "price_per_unit": 5000
+  },
+  "kitchen_mixer": {
+    "price_per_unit": 5000
+  },
+  "washing_tap": {
+    "price_per_unit": 500
+  },
+  "paint": {
+    "price_per_gallon": 4000
+  },
+  "primer": {
+    "price_per_gallon": 5000
+  },
+  "putty": {
+    "price_per_gallon": 1500
+  },
+  "exterior_paint": {
+    "price_per_gallon": 4500
+  },
+  "wire_3_29": {
+    "price_per_ft": 7.5
+  },
+  "wire_7_29": {
+    "price_per_ft": 12.0
+  },
+  "wire_7_36": {
+    "price_per_ft": 22.0
+  },
+  "wire_7_44": {
+    "price_per_ft": 35.0
+  },
+  "pipe": {
+    "price_per_ft": 9.0
+  },
+  "band": {
+    "price_per_unit": 6.0
+  },
+  "fan_box": {
+    "price_per_unit": 50.0
+  },
+  "switch_box": {
+    "price_per_unit": 30.0
+  },
+  "plastic_socket": {
+    "price_per_unit": 25.0
+  },
+  "electric_sheet": {
+    "price_per_unit": 20.0
+  },
+  "led_light": {
+    "price_per_unit": 200.0
+  },
+  "db": {
+    "price_per_unit": 2000.0
+  },
+  "breaker": {
+    "price_per_unit": 800.0
+  },
+  "door": {
+    "price_per_sft": 500
+  },
+  "window": {
+    "price_per_sft": 300
+  },
+  "door_window_frame": {
+    "price_per_rft" : 150
+  },
+  "door_lock": {
+    "price_per_lock" : 2000
+  },
+  "bolt": {
+    "price_per_bolt" : 100
+  },
+  "door_stopper": {
+    "price_per_stopper" : 200
+  },
+  "labour": {
+    "rate_per_sqft": 350
+  }
+}
+
+
