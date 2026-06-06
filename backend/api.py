@@ -13,6 +13,7 @@ Base.metadata.create_all(bind=engine)
 # ── Routers ───────────────────────────────────────────────────
 from routers.floor_plans    import router as floor_plans_router
 from routers.ai_floor_plan  import router as ai_floor_plan_router
+from routers.validation import router as validation_router
 
 PRICES_FILE = os.path.join(os.path.dirname(__file__), "material_prices.json")
 
@@ -48,12 +49,14 @@ app.add_middleware(
 # ── Mount routers ─────────────────────────────────────────────
 app.include_router(floor_plans_router)
 app.include_router(ai_floor_plan_router)
+app.include_router(validation_router)
 
 
 class EstimateRequest(BaseModel):
     plot_size_sqft: float
     plot_length_ft: float
     plot_width_ft: float
+    construction_percentage: Optional[float] = 100.0
     number_of_floors: int
     number_of_rooms: int
     number_of_bathrooms: int
@@ -156,33 +159,118 @@ def _build_chat_agent():
 
     instructions = (
         "You are BuildCost AI Assistant — a professional, friendly construction advisor for Pakistan. "
-        "You specialize in residential construction cost estimation, material quantities, construction methods, "
-        "market rates, and building best practices. "
-        "Answer all questions in clear, simple English. "
-        "If an estimate has been generated, refer to it in your answers. "
-        "If asked about something unrelated to construction, politely redirect. "
-        "Keep responses concise and well-structured.\n\n"
+        "Your primary goal is to collect all required inputs for the construction cost estimation engine.\n\n"
+        "The FastAPI backend remains the only source of truth. You are NOT allowed to:\n"
+        "- Calculate construction costs\n"
+        "- Estimate materials\n"
+        "- Perform business logic\n"
+        "- Generate assumptions\n"
+        "- Guess missing values\n"
+        "- Override backend validations\n\n"
+        "### Conversation Rules\n"
+        "Collect all missing information. Only ask for missing fields. "
+        "Maintain a structured state throughout the conversation. Never ask twice for information already collected.\n\n"
+        "### Fields to Collect:\n"
+        "1. Plot Size (sqft)\n"
+        "2. Plot Length (ft)\n"
+        "3. Plot Width (ft)\n"
+        "4. Construction Percentage (Do NOT assume. Options: Economy 70%, Standard 80%, Maximum Utilization 100%, Custom %)\n"
+        "5. Number of Floors\n"
+        "6. Number of Rooms per floor\n"
+        "7. Number of Bathrooms per floor\n"
+        "8. Number of Kitchens per floor\n"
+        "9. Number of Washing areas\n"
+        "10. Number of Geysers\n"
+        "11. Number of Columns (default 14)\n"
+        "12. Underground tank required? (Yes/No) -> If yes, collect Length & Width\n"
+        "13. Overhead tank required? (Yes/No) -> If yes, collect Length & Width\n"
+        "14. Tower required? (Yes/No) -> If yes, collect Length & Width\n\n"
+        "### Size Collection Rules (After receiving counts):\n"
+        "- For Rooms: Ask for each room size (e.g., 12x12, 14x14).\n"
+        "- For Bathrooms: Ask for each bathroom size (e.g., 5x8, 6x8).\n"
+        "- For Kitchens: Ask for each kitchen size (e.g., 10x12).\n\n"
+        "### Validation Rules:\n"
+        "- Plot Consistency: Length × Width should approximately match Plot Size. If not: 'Your plot dimensions appear inconsistent with the provided plot size. Please verify the dimensions.'\n"
+        "- Count Validation: Number of sizes provided must equal the count for rooms, bathrooms, and kitchens.\n"
+        "- Dimension Format: Valid format is LxW (e.g., 12x12). Invalid formats like '12 by 12' or '12*12' must be corrected.\n\n"
+        "### Completion Rule:\n"
+        "When all required inputs are collected, use the `submit_estimate` tool to generate the final payload and get the results from the backend.\n"
+        "Display backend results exactly as returned. You may format or explain them, but never modify the numbers.\n\n"
         f"Shared project inputs:\n{json.dumps(shared_inputs, indent=2)}\n\n"
         f"{estimate_summary}"
     )
-
-    sub_agents = [
-        Agent(name="Gray Structure Agent", instructions=instructions, tools=[estimate_gray_structure]),
-        Agent(name="Steel Agent", instructions=instructions, tools=[estimate_steel]),
-        Agent(name="Plumbing Agent", instructions=instructions, tools=[estimate_plumbing]),
-        Agent(name="Paint Agent", instructions=instructions, tools=[estimate_paint]),
-        Agent(name="Electrical Agent", instructions=instructions, tools=[estimate_electric]),
-        Agent(name="Doors and Windows Agent", instructions=instructions, tools=[doors_windows_tool]),
-        Agent(name="Labour Agent", instructions=instructions, tools=[estimate_labour]),
-    ]
 
     main = Agent(
         name="Construction Expert Agent",
         instructions=instructions,
         model=model,
-        handoffs=sub_agents,
+        tools=[submit_estimate_tool],
     )
     return main, run_cfg
+
+
+def submit_estimate(
+    plot_size_sqft: float,
+    plot_length_ft: float,
+    plot_width_ft: float,
+    number_of_floors: int,
+    number_of_rooms: int,
+    number_of_bathrooms: int,
+    number_of_kitchens: int,
+    room_sizes: str,
+    bathroom_sizes: str,
+    kitchen_sizes: str,
+    number_of_washingareas: int,
+    number_of_geysers: int,
+    construction_percentage: float = 100.0,
+    number_of_columns: int = 14,
+    include_underground_tank: bool = False,
+    ug_tank_length_ft: float = 0.0,
+    ug_tank_width_ft: float = 0.0,
+    include_overhead_tank: bool = False,
+    oh_tank_length_ft: float = 0.0,
+    oh_tank_width_ft: float = 0.0,
+    include_tower: bool = False,
+    tower_length_ft: float = 0.0,
+    tower_width_ft: float = 0.0
+) -> str:
+    """
+    Submits the collected data to the estimation engine and returns the final estimate results.
+    Call this ONLY when ALL required fields have been collected from the user.
+    """
+    try:
+        data = EstimateRequest(
+            plot_size_sqft=plot_size_sqft,
+            plot_length_ft=plot_length_ft,
+            plot_width_ft=plot_width_ft,
+            construction_percentage=construction_percentage,
+            number_of_floors=number_of_floors,
+            number_of_rooms=number_of_rooms,
+            number_of_bathrooms=number_of_bathrooms,
+            number_of_kitchens=number_of_kitchens,
+            room_sizes=room_sizes,
+            bathroom_sizes=bathroom_sizes,
+            kitchen_sizes=kitchen_sizes,
+            number_of_washingareas=number_of_washingareas,
+            number_of_geysers=number_of_geysers,
+            number_of_columns=number_of_columns,
+            include_underground_tank=include_underground_tank,
+            ug_tank_length_ft=ug_tank_length_ft,
+            ug_tank_width_ft=ug_tank_width_ft,
+            include_overhead_tank=include_overhead_tank,
+            oh_tank_length_ft=oh_tank_length_ft,
+            oh_tank_width_ft=oh_tank_width_ft,
+            include_tower=include_tower,
+            tower_length_ft=tower_length_ft,
+            tower_width_ft=tower_width_ft
+        )
+        results = create_estimate(data)
+        return json.dumps(results, indent=2)
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+from agents import function_tool
+submit_estimate_tool = function_tool(submit_estimate)
 
 
 @app.post("/api/chat")
@@ -221,7 +309,55 @@ def create_estimate(data: EstimateRequest):
         from tools.electric_estimate_tool import electric_estimate_tool_func
         from tools.door_windows_tool import doors_windows_tool_func
         from tools.labour_cost_tool import labour_cost_tool_func
+        from services.validation_service import ValidationService
+        from models.plot_models import Plot
+        from models.room_models import Room as RoomModel
 
+        # 1. Validation Logic
+        def parse_to_room_models(size_str, room_type):
+            rooms = []
+            if not size_str:
+                return rooms
+            for item in size_str.split(","):
+                item = item.strip().lower().replace(" ", "")
+                if "x" in item:
+                    try:
+                        l, w = map(float, item.split("x"))
+                        rooms.append(RoomModel(room_type=room_type, length=l, width=w))
+                    except:
+                        continue
+            return rooms
+
+        validation_rooms = []
+        validation_rooms.extend(parse_to_room_models(data.room_sizes, "bedroom"))
+        validation_rooms.extend(parse_to_room_models(data.bathroom_sizes, "washroom"))
+        validation_rooms.extend(parse_to_room_models(data.kitchen_sizes, "kitchen"))
+
+        plot = Plot(
+            length=data.plot_length_ft, 
+            width=data.plot_width_ft, 
+            construction_percentage=data.construction_percentage
+        )
+        
+        v_service = ValidationService()
+        v_res = v_service.validate_construction_plan(plot, validation_rooms)
+
+        if not v_res.success:
+            # Collect critical error messages
+            critical_errors = [w.message for w in v_res.warnings if w.warning_code in ["AREA_EXCEEDED", "DIMENSION_TOO_SMALL", "NO_ROOMS"]]
+            if not critical_errors:
+                critical_errors = [v_res.message]
+            
+            raise HTTPException(
+                status_code=400, 
+                detail={
+                    "error": "Validation Failed",
+                    "message": "The provided plan is architecturally invalid.",
+                    "details": critical_errors
+                }
+            )
+
+        # 2. Proceed with Estimation if valid
         shared_inputs.update(data.model_dump())
 
         results = {}
@@ -247,12 +383,18 @@ def create_estimate(data: EstimateRequest):
             if isinstance(v, dict) and "total_cost" in v
         )
         results["grand_total"] = grand_total
+        
+        # Include validation warnings in results if any (e.g., HIGH_DENSITY)
+        if v_res.warnings:
+            results["validation_warnings"] = [w.model_dump() for w in v_res.warnings]
 
         if errors:
             results["errors"] = errors
 
         return results
 
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

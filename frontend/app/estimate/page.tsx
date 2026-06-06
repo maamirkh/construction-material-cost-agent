@@ -13,6 +13,7 @@ interface FormData {
   plot_size_sqft: string;
   plot_length_ft: string;
   plot_width_ft: string;
+  construction_percentage: string;
   number_of_floors: string;
   number_of_columns: string;
   number_of_rooms: string;
@@ -38,6 +39,7 @@ const initialForm: FormData = {
   plot_size_sqft: "",
   plot_length_ft: "",
   plot_width_ft: "",
+  construction_percentage: "100",
   number_of_floors: "",
   number_of_columns: "14",
   number_of_rooms: "",
@@ -184,6 +186,7 @@ export default function EstimatePage() {
       plot_size_sqft: parseFloat(form.plot_size_sqft),
       plot_length_ft: parseFloat(form.plot_length_ft),
       plot_width_ft: parseFloat(form.plot_width_ft),
+      construction_percentage: parseFloat(form.construction_percentage) || 100,
       number_of_floors: parseInt(form.number_of_floors),
       number_of_columns: parseInt(form.number_of_columns) || 14,
       number_of_rooms: parseInt(form.number_of_rooms),
@@ -212,12 +215,16 @@ export default function EstimatePage() {
         body: JSON.stringify(payload),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Server error — is the backend running?");
+        let msg = data.error || "Server error — is the backend running?";
+        if (data.details && Array.isArray(data.details) && data.details.length > 0) {
+          msg = `${msg}: ${data.details.join(" ")}`;
+        }
+        throw new Error(msg);
       }
 
-      const data = await res.json();
       sessionStorage.setItem("estimateResult", JSON.stringify(data));
       sessionStorage.setItem("estimateInput", JSON.stringify(payload));
       router.push("/results");
@@ -280,6 +287,7 @@ export default function EstimatePage() {
                 <p className="text-slate-400">Enter basic information about your plot and building</p>
               </div>
               <Field label="Plot Size" name="plot_size_sqft" value={form.plot_size_sqft} onChange={setField} placeholder="e.g. 1800" helper="Total area in square feet" required />
+              <Field label="Construction Area (%)" name="construction_percentage" value={form.construction_percentage} onChange={setField} placeholder="e.g. 80" helper="Percentage of plot area to be constructed (0-100)" required />
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Plot Length (ft)" name="plot_length_ft" value={form.plot_length_ft} onChange={setField} placeholder="e.g. 40" required />
                 <Field label="Plot Width (ft)" name="plot_width_ft" value={form.plot_width_ft} onChange={setField} placeholder="e.g. 45" required />
