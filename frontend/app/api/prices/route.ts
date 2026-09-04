@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND = "https://mamir1983-buildcost.hf.space/api/prices";
+const BACKEND = "http://localhost:8000/api/prices || https://mamir1983-buildcost.hf.space/api/prices";
 
 export async function GET() {
   try {

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const res = await fetch("https://mamir1983-buildcost.hf.space/api/chat", {
+    const res = await fetch("http://localhost:8000/api/chat || https://mamir1983-buildcost.hf.space/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Use environment variable or default to local backend
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://mamir1983-buildcost.hf.space";
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000 || https://mamir1983-buildcost.hf.space/";
 
     const res = await fetch(`${API_URL}/api/estimate`, {
       method: "POST",
